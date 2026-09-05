@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'orbit_colors.dart';
+import 'orbit_radius.dart';
 
 abstract final class OrbitTheme {
   static ThemeData dark() {
@@ -14,6 +15,11 @@ abstract final class OrbitTheme {
         surface: OrbitColors.backgroundElevated,
         error: OrbitColors.danger,
       ),
+    );
+
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(OrbitRadius.md),
+      borderSide: const BorderSide(color: OrbitColors.borderSubtle),
     );
 
     return base.copyWith(
@@ -74,6 +80,28 @@ abstract final class OrbitTheme {
           fontWeight: FontWeight.w600,
           color: OrbitColors.textMuted,
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: OrbitColors.surfaceSoft,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border.copyWith(
+          borderSide: const BorderSide(color: OrbitColors.primary, width: 1.4),
+        ),
+        errorBorder: border.copyWith(
+          borderSide: const BorderSide(color: OrbitColors.danger),
+        ),
+        labelStyle: const TextStyle(color: OrbitColors.textSecondary),
+        hintStyle: const TextStyle(color: OrbitColors.textMuted),
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: OrbitColors.primary,
+        selectionHandleColor: OrbitColors.primary,
       ),
       dividerColor: OrbitColors.borderSubtle,
       splashColor: OrbitColors.primary.withValues(alpha: 0.10),

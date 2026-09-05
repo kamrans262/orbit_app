@@ -1,0 +1,4 @@
+{
+  "ORBIT_ENVIRONMENT": "staging",
+  "ORBIT_API_BASE_URL": "https://staging-api.example.com/api"
+}
