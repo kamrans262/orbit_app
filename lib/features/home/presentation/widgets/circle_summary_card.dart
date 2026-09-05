@@ -1,29 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design_system/orbit_colors.dart';
 import '../../../../core/design_system/orbit_radius.dart';
 import '../../../../core/design_system/orbit_spacing.dart';
 import '../../../../core/widgets/orbit_avatar.dart';
 import '../../../../core/widgets/orbit_glass_card.dart';
-import '../../domain/home_dashboard.dart';
+import '../../../presence/domain/presence_snapshot.dart';
+import '../../domain/home_overview.dart';
+import '../home_overview_providers.dart';
 
-class CircleSummaryCard extends StatelessWidget {
+class CircleSummaryCard extends ConsumerWidget {
   const CircleSummaryCard({
     required this.circle,
     required this.width,
+    this.alertCount = 0,
+    this.onTap,
     super.key,
   });
 
-  final HomeCircle circle;
+  final HomeCircleSummary circle;
   final double width;
+  final int alertCount;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final presence = ref.watch(homeCirclePresenceProvider(circle.id));
+    final accent = _accentFor(circle.id);
+
     return SizedBox(
       width: width,
       child: OrbitGlassCard(
         padding: const EdgeInsets.all(OrbitSpacing.md),
-        onTap: () {},
+        onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -34,9 +44,9 @@ class CircleSummaryCard extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: circle.accent.withValues(alpha: 0.20),
+                    color: accent.withValues(alpha: 0.20),
                   ),
-                  child: Icon(circle.icon, color: circle.accent),
+                  child: Icon(Icons.groups_2_rounded, color: accent),
                 ),
                 const SizedBox(width: OrbitSpacing.sm),
                 Expanded(
@@ -66,28 +76,40 @@ class CircleSummaryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: OrbitSpacing.sm),
-            _MemberStrip(circle: circle),
+            presence.when(
+              data: (members) => _MemberStrip(
+                members: members,
+                memberCount: circle.memberCount,
+              ),
+              loading: () => const _MemberStripLoading(),
+              error: (_, _) => Text(
+                'Presence unavailable',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
             const SizedBox(height: OrbitSpacing.sm),
-            _MiniMap(accent: circle.accent),
+            _PresencePreview(accent: accent, presence: presence),
             const SizedBox(height: OrbitSpacing.sm),
             Row(
               children: <Widget>[
                 Container(
                   width: 9,
                   height: 9,
-                  decoration: const BoxDecoration(
-                    color: OrbitColors.success,
+                  decoration: BoxDecoration(
+                    color: _statusColor(presence),
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: OrbitSpacing.xs),
                 Expanded(
                   child: Text(
-                    circle.mapLabel,
+                    _summaryLabel(presence),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
-                if (circle.alertCount > 0)
+                if (alertCount > 0)
                   Container(
                     constraints: const BoxConstraints(minWidth: 34),
                     padding: const EdgeInsets.symmetric(
@@ -97,15 +119,9 @@ class CircleSummaryCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: OrbitColors.danger.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(OrbitRadius.pill),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: OrbitColors.danger.withValues(alpha: 0.26),
-                          blurRadius: 12,
-                        ),
-                      ],
                     ),
                     child: Text(
-                      '${circle.alertCount}',
+                      '$alertCount',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
@@ -117,17 +133,81 @@ class CircleSummaryCard extends StatelessWidget {
       ),
     );
   }
+
+  static Color _accentFor(String id) {
+    const accents = <Color>[
+      OrbitColors.primary,
+      OrbitColors.purple,
+      OrbitColors.teal,
+      OrbitColors.warning,
+    ];
+    final hash = id.codeUnits.fold<int>(0, (sum, value) => sum + value);
+    return accents[hash % accents.length];
+  }
+
+  static Color _statusColor(AsyncValue<List<HomePresenceMember>> presence) {
+    return presence.when(
+      data: (members) {
+        if (members.any((member) => member.status == PresenceStatus.online)) {
+          return OrbitColors.success;
+        }
+        if (members.any((member) => member.status == PresenceStatus.idle)) {
+          return OrbitColors.warning;
+        }
+        if (members.isNotEmpty &&
+            members.every((member) => member.status == PresenceStatus.ghost)) {
+          return OrbitColors.purple;
+        }
+        return OrbitColors.textMuted;
+      },
+      loading: () => OrbitColors.textMuted,
+      error: (_, _) => OrbitColors.textMuted,
+    );
+  }
+
+  static String _summaryLabel(AsyncValue<List<HomePresenceMember>> presence) {
+    return presence.when(
+      loading: () => 'Checking presence…',
+      error: (_, _) => 'Presence unavailable',
+      data: (members) {
+        if (members.isEmpty) {
+          return 'No presence reported';
+        }
+        final online = members
+            .where(
+              (member) =>
+                  member.status == PresenceStatus.online ||
+                  member.status == PresenceStatus.idle,
+            )
+            .length;
+        final ghost = members
+            .where((member) => member.status == PresenceStatus.ghost)
+            .length;
+        if (online > 0 && ghost > 0) {
+          return '$online online • $ghost private';
+        }
+        if (online > 0) {
+          return '$online online';
+        }
+        if (ghost == members.length) {
+          return 'Privacy protected';
+        }
+        return 'No recent presence';
+      },
+    );
+  }
 }
 
 class _MemberStrip extends StatelessWidget {
-  const _MemberStrip({required this.circle});
+  const _MemberStrip({required this.members, required this.memberCount});
 
-  final HomeCircle circle;
+  final List<HomePresenceMember> members;
+  final int memberCount;
 
   @override
   Widget build(BuildContext context) {
-    final visibleMembers = circle.members.take(3).toList(growable: false);
-    final hiddenCount = circle.memberCount - visibleMembers.length;
+    final visibleMembers = members.take(3).toList(growable: false);
+    final hiddenCount = (memberCount - visibleMembers.length).clamp(0, 999);
 
     return Row(
       children: <Widget>[
@@ -135,9 +215,11 @@ class _MemberStrip extends StatelessWidget {
           (member) => Padding(
             padding: const EdgeInsets.only(right: OrbitSpacing.xs),
             child: OrbitAvatar(
-              initials: member.initials,
+              initials: _initials(member.name),
               size: 38,
-              isOnline: member.isOnline,
+              isOnline:
+                  member.status == PresenceStatus.online ||
+                  member.status == PresenceStatus.idle,
             ),
           ),
         ),
@@ -161,15 +243,94 @@ class _MemberStrip extends StatelessWidget {
       ],
     );
   }
+
+  static String _initials(String value) {
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .toList(growable: false);
+    if (parts.isEmpty) {
+      return 'O';
+    }
+    return parts.map((part) => part[0].toUpperCase()).join();
+  }
 }
 
-class _MiniMap extends StatelessWidget {
-  const _MiniMap({required this.accent});
-
-  final Color accent;
+class _MemberStripLoading extends StatelessWidget {
+  const _MemberStripLoading();
 
   @override
   Widget build(BuildContext context) {
+    return const Row(
+      children: <Widget>[
+        _LoadingAvatar(),
+        SizedBox(width: OrbitSpacing.xs),
+        _LoadingAvatar(),
+        SizedBox(width: OrbitSpacing.xs),
+        _LoadingAvatar(),
+      ],
+    );
+  }
+}
+
+class _LoadingAvatar extends StatelessWidget {
+  const _LoadingAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: OrbitColors.surfaceElevated,
+      ),
+    );
+  }
+}
+
+class _PresencePreview extends StatelessWidget {
+  const _PresencePreview({required this.accent, required this.presence});
+
+  final Color accent;
+  final AsyncValue<List<HomePresenceMember>> presence;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = presence.when<IconData>(
+      loading: () => Icons.radar_rounded,
+      error: (_, _) => Icons.radar_rounded,
+      data: (members) {
+        if (members.isNotEmpty &&
+            members.every(
+              (member) => member.locationMode == PresenceLocationMode.ghost,
+            )) {
+          return Icons.visibility_off_rounded;
+        }
+        if (members.isNotEmpty &&
+            members.every(
+              (member) =>
+                  member.locationMode == PresenceLocationMode.hidden ||
+                  member.locationMode == PresenceLocationMode.ghost,
+            )) {
+          return Icons.location_off_rounded;
+        }
+        if (members.any(
+          (member) => member.locationMode == PresenceLocationMode.precise,
+        )) {
+          return Icons.my_location_rounded;
+        }
+        if (members.any(
+          (member) => member.locationMode == PresenceLocationMode.approximate,
+        )) {
+          return Icons.location_searching_rounded;
+        }
+        return Icons.radar_rounded;
+      },
+    );
+
     return Container(
       height: 72,
       decoration: BoxDecoration(
@@ -180,69 +341,18 @@ class _MiniMap extends StatelessWidget {
           colors: <Color>[Color(0xFF293648), Color(0xFF18202D)],
         ),
       ),
-      child: CustomPaint(
-        painter: _MiniMapPainter(accent),
-        child: Center(
-          child: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: accent.withValues(alpha: 0.22),
-              border: Border.all(color: accent.withValues(alpha: 0.72)),
-            ),
-            child: Icon(Icons.home_rounded, size: 18, color: accent),
+      child: Center(
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: accent.withValues(alpha: 0.18),
+            border: Border.all(color: accent.withValues(alpha: 0.65)),
           ),
+          child: Icon(icon, size: 19, color: accent),
         ),
       ),
     );
-  }
-}
-
-class _MiniMapPainter extends CustomPainter {
-  const _MiniMapPainter(this.accent);
-
-  final Color accent;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final road = Paint()
-      ..color = Colors.white.withValues(alpha: 0.07)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-
-    final pathA = Path()
-      ..moveTo(0, size.height * 0.24)
-      ..quadraticBezierTo(
-        size.width * 0.35,
-        size.height * 0.05,
-        size.width,
-        size.height * 0.36,
-      );
-    final pathB = Path()
-      ..moveTo(size.width * 0.08, size.height)
-      ..quadraticBezierTo(
-        size.width * 0.46,
-        size.height * 0.55,
-        size.width * 0.96,
-        0,
-      );
-    final pathC = Path()
-      ..moveTo(0, size.height * 0.72)
-      ..lineTo(size.width, size.height * 0.78);
-
-    canvas.drawPath(pathA, road);
-    canvas.drawPath(pathB, road);
-    canvas.drawPath(pathC, road);
-
-    final glow = Paint()
-      ..color = accent.withValues(alpha: 0.06)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width * 0.70, size.height * 0.30), 28, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniMapPainter oldDelegate) {
-    return oldDelegate.accent != accent;
   }
 }

@@ -5,16 +5,28 @@ import '../../../../core/design_system/orbit_spacing.dart';
 import '../../../../core/widgets/orbit_glass_card.dart';
 
 class QuickActions extends StatelessWidget {
-  const QuickActions({super.key});
+  const QuickActions({
+    required this.onPing,
+    required this.onSos,
+    required this.onAddMember,
+    required this.onOpenMap,
+    super.key,
+  });
+
+  final VoidCallback onPing;
+  final VoidCallback onSos;
+  final VoidCallback onAddMember;
+  final VoidCallback onOpenMap;
 
   @override
   Widget build(BuildContext context) {
-    const actions = <_QuickActionData>[
+    final actions = <_QuickActionData>[
       _QuickActionData(
         title: 'Ping',
         subtitle: "Let them know\nyou're good",
         icon: Icons.near_me_rounded,
         accent: OrbitColors.primary,
+        onTap: onPing,
       ),
       _QuickActionData(
         title: 'SOS',
@@ -22,18 +34,21 @@ class QuickActions extends StatelessWidget {
         icon: Icons.sos_rounded,
         accent: OrbitColors.danger,
         isDanger: true,
+        onTap: onSos,
       ),
       _QuickActionData(
         title: 'Add Member',
         subtitle: 'Grow your circle',
         icon: Icons.person_add_alt_1_rounded,
         accent: OrbitColors.primary,
+        onTap: onAddMember,
       ),
       _QuickActionData(
         title: 'Open Map',
         subtitle: 'See everyone nearby',
         icon: Icons.map_outlined,
         accent: OrbitColors.teal,
+        onTap: onOpenMap,
       ),
     ];
 
@@ -71,7 +86,7 @@ class _QuickActionCard extends StatelessWidget {
     return SizedBox(
       height: 156,
       child: OrbitGlassCard(
-        onTap: () {},
+        onTap: data.onTap,
         tint: data.isDanger
             ? OrbitColors.danger.withValues(alpha: 0.22)
             : data.accent.withValues(alpha: 0.08),
@@ -111,6 +126,7 @@ class _QuickActionData {
     required this.subtitle,
     required this.icon,
     required this.accent,
+    required this.onTap,
     this.isDanger = false,
   });
 
@@ -118,5 +134,6 @@ class _QuickActionData {
   final String subtitle;
   final IconData icon;
   final Color accent;
+  final VoidCallback onTap;
   final bool isDanger;
 }

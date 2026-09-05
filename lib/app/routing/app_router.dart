@@ -13,6 +13,8 @@ import '../../features/auth/presentation/pages/otp_verification_page.dart';
 import '../../features/camera/presentation/camera_page.dart';
 import '../../features/circles/presentation/circles_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/ping/presentation/ping_page.dart';
+import '../../features/presence/presentation/presence_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import 'orbit_shell.dart';
 
@@ -78,6 +80,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/security/device-approvals',
         builder: (context, state) => const DeviceApprovalsPage(),
       ),
+      GoRoute(
+        path: '/presence',
+        builder: (context, state) => const PresencePage(),
+      ),
+      GoRoute(path: '/pings', builder: (context, state) => const PingPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return OrbitShell(navigationShell: navigationShell);

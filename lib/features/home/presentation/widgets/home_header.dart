@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../../core/design_system/orbit_colors.dart';
 import '../../../../core/design_system/orbit_spacing.dart';
 import '../../../../core/widgets/orbit_avatar.dart';
-import '../../domain/home_dashboard.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({required this.user, super.key});
+  const HomeHeader({
+    required this.displayName,
+    required this.circleCount,
+    required this.activePingCount,
+    super.key,
+  });
 
-  final HomeUser user;
+  final String displayName;
+  final int circleCount;
+  final int activePingCount;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class HomeHeader extends StatelessWidget {
             const _OrbitWordmark(),
             const Spacer(),
             OrbitAvatar(
-              initials: user.initials,
+              initials: _initials(displayName),
               size: 48,
               isOnline: true,
               backgroundColor: const Color(0xFF6A4B43),
@@ -36,7 +42,7 @@ class HomeHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'Good evening, ${user.name}',
+                    'Good evening, $displayName',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.headlineLarge,
@@ -47,15 +53,17 @@ class HomeHeader extends StatelessWidget {
                       Container(
                         width: 10,
                         height: 10,
-                        decoration: const BoxDecoration(
-                          color: OrbitColors.success,
+                        decoration: BoxDecoration(
+                          color: activePingCount > 0
+                              ? OrbitColors.warning
+                              : OrbitColors.success,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: OrbitSpacing.xs),
                       Flexible(
                         child: Text(
-                          '${user.activeCircleCount} circles, all calm',
+                          _statusLabel(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodyLarge
@@ -73,6 +81,30 @@ class HomeHeader extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _statusLabel() {
+    if (activePingCount > 0) {
+      final pingLabel = activePingCount == 1 ? 'Ping needs' : 'Pings need';
+      return '$circleCount circles • $activePingCount $pingLabel you';
+    }
+    if (circleCount == 0) {
+      return 'Your Orbit is ready';
+    }
+    return '$circleCount circles, all calm';
+  }
+
+  static String _initials(String value) {
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .toList(growable: false);
+    if (parts.isEmpty) {
+      return 'O';
+    }
+    return parts.map((part) => part[0].toUpperCase()).join();
   }
 }
 

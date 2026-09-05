@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/design_system/orbit_colors.dart';
 import '../../../core/design_system/orbit_spacing.dart';
 import '../../../core/widgets/orbit_atmosphere_background.dart';
 import '../../../core/widgets/orbit_feedback_state.dart';
 import '../../../core/widgets/orbit_section_header.dart';
-import '../domain/home_dashboard.dart';
-import 'home_providers.dart';
-import 'widgets/activity_tile.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/auth_view_state.dart';
+import '../../ping/domain/ping_item.dart';
+import '../../ping/presentation/ping_controller.dart';
+import '../../ping/presentation/widgets/ping_card.dart';
+import '../domain/home_overview.dart';
+import 'home_overview_providers.dart';
 import 'widgets/circle_summary_card.dart';
 import 'widgets/home_header.dart';
-import 'widgets/moment_card.dart';
 import 'widgets/quick_actions.dart';
 import 'widgets/sos_floating_action.dart';
-import 'widgets/upcoming_tile.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dashboard = ref.watch(homeDashboardProvider);
+    final circles = ref.watch(homeCirclesProvider);
+    final pings = ref.watch(pingControllerProvider);
+    final auth = ref
+        .watch(authControllerProvider)
+        .when(
+          data: (value) => value,
+          error: (_, _) => const AuthViewState.signedOut(),
+          loading: () => const AuthViewState.signedOut(),
+        );
 
     return Stack(
       fit: StackFit.expand,
@@ -28,43 +40,60 @@ class HomePage extends ConsumerWidget {
         const OrbitAtmosphereBackground(),
         SafeArea(
           bottom: false,
-          child: dashboard.when(
-            data: (data) {
-              if (data.isEmpty) {
-                return const OrbitEmptyState(
-                  title: 'Your Orbit is quiet',
-                  message:
-                      'Create or join a circle to start seeing activity here.',
-                );
-              }
-
-              return _HomeDashboardContent(dashboard: data);
-            },
+          child: circles.when(
             loading: () => const OrbitLoadingState(),
-            error: (error, stackTrace) => OrbitErrorState(
+            error: (_, _) => OrbitErrorState(
               title: 'Home could not be loaded',
               message: 'Check your connection and try again.',
-              onRetry: () => ref.invalidate(homeDashboardProvider),
+              onRetry: () => ref.invalidate(homeCirclesProvider),
+            ),
+            data: (circleData) => _HomeDashboardContent(
+              circles: circleData,
+              pings: pings,
+              displayName: auth.user?.displayName ?? 'there',
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           right: OrbitSpacing.md,
           bottom: OrbitSpacing.md,
-          child: SosFloatingAction(),
+          child: SosFloatingAction(
+            onPressed: () => _showPlannedFeature(
+              context,
+              'SOS safety activation arrives in Flutter M8.',
+            ),
+          ),
         ),
       ],
     );
   }
+
+  static void _showPlannedFeature(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
-class _HomeDashboardContent extends StatelessWidget {
-  const _HomeDashboardContent({required this.dashboard});
+class _HomeDashboardContent extends ConsumerWidget {
+  const _HomeDashboardContent({
+    required this.circles,
+    required this.pings,
+    required this.displayName,
+  });
 
-  final HomeDashboard dashboard;
+  final List<HomeCircleSummary> circles;
+  final AsyncValue<PingViewState> pings;
+  final String displayName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activePings = pings.when(
+      data: (value) => value.inbox,
+      error: (_, _) => const <PingItem>[],
+      loading: () => const <PingItem>[],
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final horizontalPadding = constraints.maxWidth >= 700
@@ -78,84 +107,129 @@ class _HomeDashboardContent extends StatelessWidget {
             : constraints.maxWidth < 500
             ? 258.0
             : 286.0;
-        final momentWidth = constraints.maxWidth < 360 ? 132.0 : 146.0;
 
-        return CustomScrollView(
-          slivers: <Widget>[
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                OrbitSpacing.md,
-                horizontalPadding,
-                124,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxContentWidth),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        HomeHeader(user: dashboard.user),
-                        const SizedBox(height: OrbitSpacing.lg),
+        return RefreshIndicator(
+          onRefresh: () => _refresh(ref),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              OrbitSpacing.md,
+              horizontalPadding,
+              124,
+            ),
+            children: <Widget>[
+              Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      HomeHeader(
+                        displayName: displayName,
+                        circleCount: circles.length,
+                        activePingCount: activePings.length,
+                      ),
+                      const SizedBox(height: OrbitSpacing.lg),
+                      if (circles.isEmpty)
+                        const _NoCirclesCard()
+                      else
                         _CircleRail(
-                          circles: dashboard.circles,
+                          circles: circles,
+                          activePings: activePings,
                           cardWidth: circleWidth,
                         ),
+                      const SizedBox(height: OrbitSpacing.lg),
+                      QuickActions(
+                        onPing: () => context.push('/pings'),
+                        onSos: () => _showPlannedFeature(
+                          context,
+                          'SOS safety flows arrive in Flutter M8.',
+                        ),
+                        onAddMember: () => _showPlannedFeature(
+                          context,
+                          'Circle member management arrives in Flutter M4.',
+                        ),
+                        onOpenMap: () => _showPlannedFeature(
+                          context,
+                          'The full privacy-aware map experience is not enabled yet.',
+                        ),
+                      ),
+                      if (activePings.isNotEmpty) ...<Widget>[
                         const SizedBox(height: OrbitSpacing.lg),
-                        const QuickActions(),
-                        const SizedBox(height: OrbitSpacing.lg),
-                        const OrbitSectionHeader(
-                          title: 'Recent Moments',
+                        OrbitSectionHeader(
+                          title: 'Active Pings',
                           actionLabel: 'See all',
+                          onAction: () => context.push('/pings'),
                         ),
                         const SizedBox(height: OrbitSpacing.xs),
-                        _MomentRail(
-                          moments: dashboard.moments,
-                          cardWidth: momentWidth,
-                        ),
-                        const SizedBox(height: OrbitSpacing.lg),
-                        const OrbitSectionHeader(
-                          title: 'Smart Activity',
-                          actionLabel: 'See all',
-                        ),
-                        const SizedBox(height: OrbitSpacing.xs),
-                        ...dashboard.activities.map(
-                          (activity) => Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: OrbitSpacing.xs,
+                        ...activePings
+                            .take(2)
+                            .map(
+                              (ping) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: OrbitSpacing.xs,
+                                ),
+                                child: PingCard(
+                                  ping: ping,
+                                  isIncoming: true,
+                                  isBusy: pings.when(
+                                    data: (value) => value.isBusy,
+                                    error: (_, _) => false,
+                                    loading: () => false,
+                                  ),
+                                  onHey: () => ref
+                                      .read(pingControllerProvider.notifier)
+                                      .respond(ping, PingResponseType.hey),
+                                  onShareLocation: () => ref
+                                      .read(pingControllerProvider.notifier)
+                                      .respond(
+                                        ping,
+                                        PingResponseType.shareLocation,
+                                      ),
+                                  onDismiss: () => ref
+                                      .read(pingControllerProvider.notifier)
+                                      .dismiss(ping),
+                                ),
+                              ),
                             ),
-                            child: ActivityTile(activity: activity),
-                          ),
-                        ),
-                        const SizedBox(height: OrbitSpacing.md),
-                        const OrbitSectionHeader(title: 'Upcoming'),
-                        const SizedBox(height: OrbitSpacing.xs),
-                        ...dashboard.upcoming.map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: OrbitSpacing.xs,
-                            ),
-                            child: UpcomingTile(item: item),
-                          ),
-                        ),
                       ],
-                    ),
+                      const SizedBox(height: OrbitSpacing.lg),
+                      _PrivacyShortcut(onTap: () => context.push('/presence')),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
   }
+
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(homeCirclesProvider);
+    ref.invalidate(homeCirclePresenceProvider);
+    await ref.read(pingControllerProvider.notifier).refresh();
+    await ref.read(homeCirclesProvider.future);
+  }
+
+  static void _showPlannedFeature(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
 class _CircleRail extends StatelessWidget {
-  const _CircleRail({required this.circles, required this.cardWidth});
+  const _CircleRail({
+    required this.circles,
+    required this.activePings,
+    required this.cardWidth,
+  });
 
-  final List<HomeCircle> circles;
+  final List<HomeCircleSummary> circles;
+  final List<PingItem> activePings;
   final double cardWidth;
 
   @override
@@ -167,30 +241,109 @@ class _CircleRail extends StatelessWidget {
         itemCount: circles.length,
         separatorBuilder: (_, _) => const SizedBox(width: OrbitSpacing.sm),
         itemBuilder: (context, index) {
-          return CircleSummaryCard(circle: circles[index], width: cardWidth);
+          final circle = circles[index];
+          final alertCount = activePings
+              .where((ping) => ping.circleId == circle.id)
+              .length;
+          return CircleSummaryCard(
+            circle: circle,
+            width: cardWidth,
+            alertCount: alertCount,
+            onTap: () => _HomeDashboardContent._showPlannedFeature(
+              context,
+              'Circle details and member management arrive in Flutter M4.',
+            ),
+          );
         },
       ),
     );
   }
 }
 
-class _MomentRail extends StatelessWidget {
-  const _MomentRail({required this.moments, required this.cardWidth});
-
-  final List<HomeMoment> moments;
-  final double cardWidth;
+class _NoCirclesCard extends StatelessWidget {
+  const _NoCirclesCard();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 184,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: moments.length,
-        separatorBuilder: (_, _) => const SizedBox(width: OrbitSpacing.sm),
-        itemBuilder: (context, index) {
-          return MomentCard(moment: moments[index], width: cardWidth);
-        },
+    return Container(
+      padding: const EdgeInsets.all(OrbitSpacing.lg),
+      decoration: BoxDecoration(
+        color: OrbitColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: OrbitColors.borderSubtle),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.groups_2_outlined, color: OrbitColors.primary),
+          const SizedBox(width: OrbitSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'Your Orbit is quiet',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Create or join a Circle in M4 to start sharing presence privately.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivacyShortcut extends StatelessWidget {
+  const _PrivacyShortcut({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(OrbitSpacing.md),
+          decoration: BoxDecoration(
+            color: OrbitColors.purple.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: OrbitColors.borderSubtle),
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.shield_moon_rounded, color: OrbitColors.purple),
+              const SizedBox(width: OrbitSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Presence & privacy',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Control Global Ghost Mode and per-Circle visibility.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: OrbitColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

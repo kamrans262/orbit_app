@@ -4,17 +4,20 @@ import '../../../../core/design_system/orbit_colors.dart';
 import '../../../../core/design_system/orbit_radius.dart';
 
 class SosFloatingAction extends StatelessWidget {
-  const SosFloatingAction({super.key});
+  const SosFloatingAction({required this.onPressed, super.key});
+
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       label: 'Emergency SOS',
+      hint: 'SOS safety activation is not enabled in this milestone',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: onPressed,
           customBorder: const CircleBorder(),
           child: Container(
             width: 88,

@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Orbit uses your location only when you choose to share your current presence with your Circles.</string>
 </dict>
 </plist>

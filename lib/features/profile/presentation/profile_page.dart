@@ -101,6 +101,23 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: OrbitSpacing.lg),
+              Text('Privacy', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: OrbitSpacing.sm),
+              OrbitGlassCard(
+                child: ListTile(
+                  onTap: () => context.push('/presence'),
+                  leading: const Icon(
+                    Icons.shield_moon_rounded,
+                    color: OrbitColors.purple,
+                  ),
+                  title: const Text('Presence & privacy'),
+                  subtitle: const Text(
+                    'Global Ghost Mode, Circle visibility and Ping permission.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                ),
+              ),
+              const SizedBox(height: OrbitSpacing.lg),
               Text('Security', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: OrbitSpacing.sm),
               OrbitGlassCard(
