@@ -21,6 +21,9 @@ import '../../features/circles/presentation/pages/create_circle_invite_page.dart
 import '../../features/circles/presentation/pages/create_circle_page.dart';
 import '../../features/circles/presentation/pages/join_circle_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/identity/presentation/pages/privacy_center_page.dart';
+import '../../features/identity/presentation/pages/security_activity_page.dart';
+import '../../features/identity/presentation/pages/security_sessions_page.dart';
 import '../../features/messaging/presentation/pages/circle_messages_page.dart';
 import '../../features/messaging/presentation/pages/messaging_security_page.dart';
 import '../../features/moments/domain/moment_models.dart';
@@ -32,9 +35,12 @@ import '../../features/notifications/presentation/pages/announcement_detail_page
 import '../../features/notifications/presentation/pages/notification_preferences_page.dart';
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/sos/presentation/pages/sos_activation_page.dart';
 import '../../features/sos/presentation/pages/sos_incident_page.dart';
+import '../../features/subscription/presentation/subscription_page.dart';
+import '../../features/support/presentation/support_page.dart';
 import 'orbit_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -102,6 +108,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/security/messaging',
         builder: (context, state) => const MessagingSecurityPage(),
+      ),
+      GoRoute(
+        path: '/security/sessions',
+        builder: (context, state) => const SecuritySessionsPage(),
+      ),
+      GoRoute(
+        path: '/security/activity',
+        builder: (context, state) => const SecurityActivityPage(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const PrivacyCenterPage(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionPage(),
+      ),
+      GoRoute(
+        path: '/support',
+        builder: (context, state) => const SupportPage(),
       ),
       GoRoute(
         path: '/presence',
