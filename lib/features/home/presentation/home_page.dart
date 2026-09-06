@@ -146,10 +146,7 @@ class _HomeDashboardContent extends ConsumerWidget {
                           context,
                           'SOS safety flows arrive in Flutter M8.',
                         ),
-                        onAddMember: () => _showPlannedFeature(
-                          context,
-                          'Circle member management arrives in Flutter M4.',
-                        ),
+                        onAddMember: () => context.go('/circles'),
                         onOpenMap: () => _showPlannedFeature(
                           context,
                           'The full privacy-aware map experience is not enabled yet.',
@@ -249,10 +246,7 @@ class _CircleRail extends StatelessWidget {
             circle: circle,
             width: cardWidth,
             alertCount: alertCount,
-            onTap: () => _HomeDashboardContent._showPlannedFeature(
-              context,
-              'Circle details and member management arrive in Flutter M4.',
-            ),
+            onTap: () => context.push('/circles/${circle.id}'),
           );
         },
       ),
@@ -286,7 +280,7 @@ class _NoCirclesCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Create or join a Circle in M4 to start sharing presence privately.',
+                  'Create or join a private Circle to start sharing presence.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -12,6 +12,13 @@ import '../../features/auth/presentation/pages/email_sign_in_page.dart';
 import '../../features/auth/presentation/pages/otp_verification_page.dart';
 import '../../features/camera/presentation/camera_page.dart';
 import '../../features/circles/presentation/circles_page.dart';
+import '../../features/circles/presentation/pages/circle_detail_page.dart';
+import '../../features/circles/presentation/pages/circle_member_settings_page.dart';
+import '../../features/circles/presentation/pages/circle_members_page.dart';
+import '../../features/circles/presentation/pages/circle_settings_page.dart';
+import '../../features/circles/presentation/pages/create_circle_invite_page.dart';
+import '../../features/circles/presentation/pages/create_circle_page.dart';
+import '../../features/circles/presentation/pages/join_circle_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
@@ -103,6 +110,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/circles',
                 builder: (context, state) => const CirclesPage(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'create',
+                    builder: (context, state) => const CreateCirclePage(),
+                  ),
+                  GoRoute(
+                    path: 'join',
+                    builder: (context, state) => const JoinCirclePage(),
+                  ),
+                  GoRoute(
+                    path: ':circleId',
+                    builder: (context, state) => CircleDetailPage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':circleId/members',
+                    builder: (context, state) => CircleMembersPage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':circleId/members/:membershipId',
+                    builder: (context, state) => CircleMemberSettingsPage(
+                      circleId: state.pathParameters['circleId']!,
+                      membershipId: state.pathParameters['membershipId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':circleId/invite',
+                    builder: (context, state) => CreateCircleInvitePage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':circleId/settings',
+                    builder: (context, state) => CircleSettingsPage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
