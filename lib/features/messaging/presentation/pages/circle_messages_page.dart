@@ -8,6 +8,7 @@ import '../../../../core/network/orbit_api_exception.dart';
 import '../../../../core/widgets/orbit_atmosphere_background.dart';
 import '../../../../core/widgets/orbit_feedback_state.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../../../realtime/presentation/realtime_providers.dart';
 import '../../application/messaging_service.dart';
 import '../../domain/e2ee_identity.dart';
 import '../../domain/messaging_models.dart';
@@ -27,6 +28,22 @@ class CircleMessagesPage extends ConsumerStatefulWidget {
 class _CircleMessagesPageState extends ConsumerState<CircleMessagesPage> {
   bool _sending = false;
   String? _actionError;
+
+  @override
+  void initState() {
+    super.initState();
+    ref
+        .read(realtimeActiveConversationProvider.notifier)
+        .setActive(widget.circleId);
+  }
+
+  @override
+  void dispose() {
+    ref
+        .read(realtimeActiveConversationProvider.notifier)
+        .clear(widget.circleId);
+    super.dispose();
+  }
 
   Future<void> _refresh() async {
     ref.invalidate(circleConversationProvider(widget.circleId));
@@ -90,6 +107,11 @@ class _CircleMessagesPageState extends ConsumerState<CircleMessagesPage> {
   @override
   Widget build(BuildContext context) {
     final conversation = ref.watch(circleConversationProvider(widget.circleId));
+    final typingUsers = ref.watch(
+      realtimeTypingProvider.select(
+        (state) => state[widget.circleId] ?? const <int>{},
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -149,6 +171,30 @@ class _CircleMessagesPageState extends ConsumerState<CircleMessagesPage> {
                       onRetry: _retry,
                     ),
                   ),
+                ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: typingUsers.isEmpty
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          key: const ValueKey<String>('realtime-typing'),
+                          padding: const EdgeInsets.fromLTRB(
+                            OrbitSpacing.md,
+                            0,
+                            OrbitSpacing.md,
+                            OrbitSpacing.xs,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              typingUsers.length == 1
+                                  ? 'Someone is typing…'
+                                  : '${typingUsers.length} people are typing…',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(color: OrbitColors.textMuted),
+                            ),
+                          ),
+                        ),
                 ),
                 MessageComposer(
                   onSend: _send,

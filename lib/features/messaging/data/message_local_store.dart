@@ -98,11 +98,16 @@ CREATE TABLE peer_identities (
   @override
   Future<void> updateStatus(String messageId, LocalMessageStatus status) async {
     final db = await _db;
+    final preserveDelivered = status != LocalMessageStatus.delivered;
     await db.update(
       'messages',
       <String, Object?>{'status': status.name},
-      where: 'message_id = ?',
-      whereArgs: <Object?>[messageId],
+      where: preserveDelivered
+          ? 'message_id = ? AND status != ?'
+          : 'message_id = ?',
+      whereArgs: preserveDelivered
+          ? <Object?>[messageId, LocalMessageStatus.delivered.name]
+          : <Object?>[messageId],
     );
   }
 

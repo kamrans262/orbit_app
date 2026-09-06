@@ -70,6 +70,24 @@
 	<string>Orbit uses your location only when you choose to share your current presence with your Circles.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Orbit uses the camera only when you choose to capture a private Circle Moment.</string>
-</dict>
+    <!-- Orbit M10: app_links owns custom deep-link dispatch. -->
+    <key>FlutterDeepLinkingEnabled</key>
+    <false/>    <!-- Orbit M10: backend-defined orbit:// custom scheme. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>Orbit</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>orbit</string>
+            </array>
+        </dict>
+    </array></dict>
 </plist>
+
+
+
 

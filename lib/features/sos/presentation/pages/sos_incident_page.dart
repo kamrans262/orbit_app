@@ -11,6 +11,7 @@ import '../../../../core/widgets/orbit_atmosphere_background.dart';
 import '../../../../core/widgets/orbit_feedback_state.dart';
 import '../../../../core/widgets/orbit_glass_card.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../../../realtime/presentation/realtime_providers.dart';
 import '../../domain/sos_models.dart';
 import '../sos_providers.dart';
 import '../widgets/sos_responder_card.dart';
@@ -42,6 +43,13 @@ class _SosIncidentPageState extends ConsumerState<SosIncidentPage>
         ref.invalidate(sosIncidentProvider(widget.sosId));
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(
+          ref.read(reverbRealtimeClientProvider).watchSos(widget.sosId),
+        );
+      }
+    });
   }
 
   @override
@@ -58,6 +66,7 @@ class _SosIncidentPageState extends ConsumerState<SosIncidentPage>
     WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     _locationTimer?.cancel();
+    unawaited(ref.read(reverbRealtimeClientProvider).unwatchSos(widget.sosId));
     super.dispose();
   }
 
@@ -122,7 +131,11 @@ class _SosIncidentPageState extends ConsumerState<SosIncidentPage>
     if (!mounted || incident == null) {
       return;
     }
-    if (status == SosResponderStatus.declined) {
+    if (status == SosResponderStatus.engaged) {
+      // The backend only authorizes orbit.sos.{id} for the originator or an
+      // engaged responder. Retry only after Laravel confirmed engagement.
+      await ref.read(reverbRealtimeClientProvider).retrySos(widget.sosId);
+    } else if (status == SosResponderStatus.declined) {
       await _setLocationSharing(false);
     }
   }

@@ -7,6 +7,7 @@ import '../domain/e2ee_identity.dart';
 import '../domain/messaging_models.dart';
 
 abstract interface class DeviceIdentityStore {
+  Future<DevicePrivateIdentity?> read(String serverDeviceId);
   Future<DevicePrivateIdentity> getOrCreate(String serverDeviceId);
 }
 
@@ -20,19 +21,32 @@ class SecureDeviceIdentityStore implements DeviceIdentityStore {
   final Ed25519 _ed25519 = Ed25519();
 
   @override
-  Future<DevicePrivateIdentity> getOrCreate(String serverDeviceId) async {
+  Future<DevicePrivateIdentity?> read(String serverDeviceId) async {
     final storageKey = '$_namespace.$serverDeviceId';
     final existing = await _storage.read(key: storageKey);
-    if (existing != null && existing.isNotEmpty) {
-      try {
-        return _decode(existing);
-      } on FormatException {
-        await _storage.delete(key: storageKey);
-      } on TypeError {
-        await _storage.delete(key: storageKey);
-      }
+    if (existing == null || existing.isEmpty) {
+      return null;
     }
 
+    try {
+      return _decode(existing);
+    } on FormatException {
+      await _storage.delete(key: storageKey);
+      return null;
+    } on TypeError {
+      await _storage.delete(key: storageKey);
+      return null;
+    }
+  }
+
+  @override
+  Future<DevicePrivateIdentity> getOrCreate(String serverDeviceId) async {
+    final existing = await read(serverDeviceId);
+    if (existing != null) {
+      return existing;
+    }
+
+    final storageKey = '$_namespace.$serverDeviceId';
     final agreement = await (await _x25519.newKeyPair()).extract();
     final signing = await (await _ed25519.newKeyPair()).extract();
     final identity = DevicePrivateIdentity(

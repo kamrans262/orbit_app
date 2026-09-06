@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/core_providers.dart';
+import '../../messaging/presentation/device_identity_providers.dart';
 import '../../messaging/presentation/messaging_providers.dart';
 import '../../moments/presentation/moment_providers.dart';
 import '../application/media_moment_service.dart';

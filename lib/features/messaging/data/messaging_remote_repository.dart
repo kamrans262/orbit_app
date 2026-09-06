@@ -1,6 +1,7 @@
 import '../../../core/device/device_metadata_service.dart';
 import '../../../core/network/orbit_api_client.dart';
 import '../../../core/security/local_device_id_store.dart';
+import '../../push/data/push_token_store.dart';
 import '../domain/messaging_models.dart';
 
 abstract interface class MessagingRemoteRepository {
@@ -35,17 +36,25 @@ class HttpMessagingRemoteRepository implements MessagingRemoteRepository {
     required OrbitApiClient apiClient,
     required ClientDeviceIdStore clientDeviceIdStore,
     required DeviceMetadataReader deviceMetadataReader,
-  }) : this._(apiClient, clientDeviceIdStore, deviceMetadataReader);
+    PushTokenStore? pushTokenStore,
+  }) : this._(
+         apiClient,
+         clientDeviceIdStore,
+         deviceMetadataReader,
+         pushTokenStore,
+       );
 
   HttpMessagingRemoteRepository._(
     this._apiClient,
     this._clientDeviceIdStore,
     this._deviceMetadataReader,
+    this._pushTokenStore,
   );
 
   final OrbitApiClient _apiClient;
   final ClientDeviceIdStore _clientDeviceIdStore;
   final DeviceMetadataReader _deviceMetadataReader;
+  final PushTokenStore? _pushTokenStore;
 
   @override
   Future<void> publishDeviceIdentity({
@@ -53,6 +62,7 @@ class HttpMessagingRemoteRepository implements MessagingRemoteRepository {
   }) async {
     final clientDeviceId = await _clientDeviceIdStore.getOrCreate();
     final metadata = await _deviceMetadataReader.read();
+    final pushToken = await _pushTokenStore?.read();
     await _apiClient.postDataMap(
       'v1/devices',
       data: <String, Object?>{
@@ -62,6 +72,7 @@ class HttpMessagingRemoteRepository implements MessagingRemoteRepository {
         'app_version': metadata.appVersion,
         'os_version': metadata.osVersion,
         'public_identity_key': publicIdentityKey,
+        'push_token': pushToken,
       },
       allowAuthRetry: true,
     );

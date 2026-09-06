@@ -6,6 +6,7 @@ import '../config/app_environment.dart';
 import '../logging/orbit_logger.dart';
 import '../security/session_store.dart';
 import 'orbit_api_client.dart';
+import 'orbit_broadcast_auth_client.dart';
 import 'orbit_api_command_client.dart';
 import 'orbit_api_envelope_client.dart';
 import 'orbit_binary_transfer_client.dart';
@@ -17,7 +18,8 @@ class DioOrbitApiClient
         OrbitApiClient,
         OrbitBinaryTransferClient,
         OrbitApiEnvelopeClient,
-        OrbitApiCommandClient {
+        OrbitApiCommandClient,
+        OrbitBroadcastAuthClient {
   DioOrbitApiClient({
     required AppEnvironment environment,
     required SessionStore sessionStore,
@@ -260,6 +262,38 @@ class DioOrbitApiClient
         await destination.delete();
       }
     }
+  }
+
+  @override
+  Future<OrbitBroadcastAuthorization> authorizePrivateChannel({
+    required String socketId,
+    required String channelName,
+  }) async {
+    final response = await _request(
+      method: 'POST',
+      path: 'broadcasting/auth',
+      authenticated: true,
+      data: <String, Object?>{
+        'socket_id': socketId,
+        'channel_name': channelName,
+      },
+      allowAuthRetry: true,
+    );
+    final payload = _stringMap(response.data);
+    final auth = payload?['auth'];
+    if (auth is! String || auth.isEmpty) {
+      throw const OrbitApiException(
+        code: 'INVALID_BROADCAST_AUTH',
+        message: 'Orbit could not authorize that realtime channel.',
+      );
+    }
+    final channelData = payload?['channel_data'];
+    return OrbitBroadcastAuthorization(
+      auth: auth,
+      channelData: channelData is String && channelData.isNotEmpty
+          ? channelData
+          : null,
+    );
   }
 
   @override

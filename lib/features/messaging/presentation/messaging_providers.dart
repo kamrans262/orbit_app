@@ -2,16 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/core_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../push/data/push_token_store.dart';
 import '../application/messaging_service.dart';
-import '../data/device_identity_store.dart';
 import '../data/message_local_store.dart';
 import '../data/messaging_remote_repository.dart';
 import '../data/orbit_e2ee_codec.dart';
 import '../domain/messaging_models.dart';
-
-final deviceIdentityStoreProvider = Provider<DeviceIdentityStore>((ref) {
-  return SecureDeviceIdentityStore(ref.watch(flutterSecureStorageProvider));
-});
+import 'device_identity_providers.dart';
 
 final messageLocalStoreProvider = Provider<MessageLocalStore>((ref) {
   final store = SqliteEncryptedMessageLocalStore(
@@ -34,6 +31,7 @@ final messagingRemoteRepositoryProvider = Provider<MessagingRemoteRepository>((
     apiClient: ref.watch(orbitApiClientProvider),
     clientDeviceIdStore: ref.watch(clientDeviceIdStoreProvider),
     deviceMetadataReader: ref.watch(deviceMetadataReaderProvider),
+    pushTokenStore: ref.watch(pushTokenStoreProvider),
   );
 });
 

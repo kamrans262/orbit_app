@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/design_system/orbit_theme.dart';
+import '../features/realtime/presentation/orbit_realtime_bridge.dart';
 import 'routing/app_router.dart';
 
 class OrbitApp extends ConsumerWidget {
@@ -16,6 +17,8 @@ class OrbitApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: OrbitTheme.dark(),
       routerConfig: router,
+      builder: (context, child) =>
+          OrbitRealtimeBridge(child: child ?? const SizedBox.shrink()),
     );
   }
 }

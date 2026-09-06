@@ -179,6 +179,14 @@ class MessagingService {
     await _remote.sendTyping(circleId, isTyping);
   }
 
+  Future<void> applyDeliveryReceipt(String messageId) async {
+    final normalized = messageId.trim();
+    if (normalized.isEmpty) {
+      return;
+    }
+    await _local.updateStatus(normalized, LocalMessageStatus.delivered);
+  }
+
   /// Verifies that the current server device-key set still matches the
   /// identities already trusted by this installation. New devices are pinned
   /// on first sight; an unexpected key change for a known device fails closed.

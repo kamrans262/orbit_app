@@ -4,6 +4,7 @@ import 'package:orbit_app/core/network/orbit_api_client.dart';
 import 'package:orbit_app/core/security/local_device_id_store.dart';
 import 'package:orbit_app/features/messaging/data/messaging_remote_repository.dart';
 import 'package:orbit_app/features/messaging/domain/messaging_models.dart';
+import 'package:orbit_app/features/push/data/push_token_store.dart';
 
 void main() {
   test(
@@ -14,6 +15,7 @@ void main() {
         apiClient: api,
         clientDeviceIdStore: _FakeClientDeviceIdStore(),
         deviceMetadataReader: _FakeDeviceMetadataReader(),
+        pushTokenStore: _FakePushTokenStore('stored-push-token'),
       );
 
       await repository.publishDeviceIdentity(publicIdentityKey: '{"v":1}');
@@ -21,6 +23,7 @@ void main() {
       expect(api.lastPath, 'v1/devices');
       expect(api.lastData?['client_device_id'], 'client-device-id');
       expect(api.lastData?['public_identity_key'], '{"v":1}');
+      expect(api.lastData?['push_token'], 'stored-push-token');
       expect(api.lastAllowAuthRetry, isTrue);
     },
   );
@@ -186,4 +189,19 @@ class _FakeApiClient implements OrbitApiClient {
 
   @override
   void close() {}
+}
+
+class _FakePushTokenStore implements PushTokenStore {
+  _FakePushTokenStore(this.value);
+
+  String? value;
+
+  @override
+  Future<String?> read() async => value;
+
+  @override
+  Future<void> write(String token) async => value = token;
+
+  @override
+  Future<void> clear() async => value = null;
 }
