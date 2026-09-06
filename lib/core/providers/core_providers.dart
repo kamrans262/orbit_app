@@ -9,6 +9,7 @@ import '../device/device_metadata_service.dart';
 import '../logging/orbit_logger.dart';
 import '../network/dio_orbit_api_client.dart';
 import '../network/orbit_api_client.dart';
+import '../network/orbit_binary_transfer_client.dart';
 import '../security/local_device_id_store.dart';
 import '../security/pending_bootstrap_store.dart';
 import '../security/session_store.dart';
@@ -41,7 +42,7 @@ final deviceMetadataReaderProvider = Provider<DeviceMetadataReader>((ref) {
   return DeviceMetadataService(DeviceInfoPlugin(), PackageInfo.fromPlatform);
 });
 
-final orbitApiClientProvider = Provider<OrbitApiClient>((ref) {
+final dioOrbitApiClientProvider = Provider<DioOrbitApiClient>((ref) {
   final client = DioOrbitApiClient(
     environment: ref.watch(appEnvironmentProvider),
     sessionStore: ref.watch(sessionStoreProvider),
@@ -49,6 +50,16 @@ final orbitApiClientProvider = Provider<OrbitApiClient>((ref) {
   );
   ref.onDispose(client.close);
   return client;
+});
+
+final orbitApiClientProvider = Provider<OrbitApiClient>((ref) {
+  return ref.watch(dioOrbitApiClientProvider);
+});
+
+final orbitBinaryTransferClientProvider = Provider<OrbitBinaryTransferClient>((
+  ref,
+) {
+  return ref.watch(dioOrbitApiClientProvider);
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

@@ -179,6 +179,13 @@ class MessagingService {
     await _remote.sendTyping(circleId, isTyping);
   }
 
+  /// Verifies that the current server device-key set still matches the
+  /// identities already trusted by this installation. New devices are pinned
+  /// on first sight; an unexpected key change for a known device fails closed.
+  Future<void> validatePeerDevices(List<MessageDevice> devices) {
+    return _cacheDeviceKeys(devices);
+  }
+
   Future<void> _sendWithCurrentRecipients({
     required String circleId,
     required String messageId,

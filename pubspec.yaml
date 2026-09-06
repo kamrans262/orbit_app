@@ -49,6 +49,10 @@ dependencies:
   cryptography: 2.9.0
   sqflite: 2.4.3
   path: ^1.9.1
+  camera: 0.12.1
+  video_player: 2.14.0
+  path_provider: 2.1.6
+  crypto: 3.0.7
 
 dev_dependencies:
   flutter_test:

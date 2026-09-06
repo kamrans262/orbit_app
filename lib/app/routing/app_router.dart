@@ -11,6 +11,7 @@ import '../../features/auth/presentation/pages/device_approvals_page.dart';
 import '../../features/auth/presentation/pages/email_sign_in_page.dart';
 import '../../features/auth/presentation/pages/otp_verification_page.dart';
 import '../../features/camera/presentation/camera_page.dart';
+import '../../features/camera/presentation/moment_review_page.dart';
 import '../../features/circles/presentation/circles_page.dart';
 import '../../features/circles/presentation/pages/circle_detail_page.dart';
 import '../../features/circles/presentation/pages/circle_member_settings_page.dart';
@@ -22,6 +23,10 @@ import '../../features/circles/presentation/pages/join_circle_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/messaging/presentation/pages/circle_messages_page.dart';
 import '../../features/messaging/presentation/pages/messaging_security_page.dart';
+import '../../features/moments/domain/moment_models.dart';
+import '../../features/moments/presentation/pages/circle_moments_page.dart';
+import '../../features/moments/presentation/pages/moment_viewer_page.dart';
+import '../../features/moments/presentation/pages/moment_viewers_page.dart';
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -98,6 +103,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PresencePage(),
       ),
       GoRoute(path: '/pings', builder: (context, state) => const PingPage()),
+      GoRoute(
+        path: '/moments/:momentId',
+        builder: (context, state) =>
+            MomentViewerPage(momentId: state.pathParameters['momentId']!),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'viewers',
+            builder: (context, state) =>
+                MomentViewersPage(momentId: state.pathParameters['momentId']!),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return OrbitShell(navigationShell: navigationShell);
@@ -151,6 +168,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
+                    path: ':circleId/moments',
+                    builder: (context, state) => CircleMomentsPage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                  GoRoute(
                     path: ':circleId/messages',
                     builder: (context, state) => CircleMessagesPage(
                       circleId: state.pathParameters['circleId']!,
@@ -170,7 +193,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: <RouteBase>[
               GoRoute(
                 path: '/camera',
-                builder: (context, state) => const CameraPage(),
+                builder: (context, state) => CameraPage(
+                  initialCircleId: state.uri.queryParameters['circleId'],
+                ),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'review',
+                    builder: (context, state) {
+                      final draft = state.extra;
+                      if (draft is! MomentCaptureDraft) {
+                        return const CameraPage();
+                      }
+                      return MomentReviewPage(draft: draft);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

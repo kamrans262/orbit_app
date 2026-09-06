@@ -160,6 +160,11 @@ class _ActionGrid extends StatelessWidget {
         onTap: () => context.push('/circles/${circle.id}/messages'),
       ),
       _DetailAction(
+        icon: Icons.auto_awesome_rounded,
+        label: 'Moments',
+        onTap: () => context.push('/circles/${circle.id}/moments'),
+      ),
+      _DetailAction(
         icon: Icons.people_outline_rounded,
         label: 'Members',
         onTap: () => context.push('/circles/${circle.id}/members'),

@@ -7,6 +7,8 @@ import 'package:orbit_app/features/home/data/api_home_overview_repository.dart';
 import 'package:orbit_app/features/home/domain/home_overview.dart';
 import 'package:orbit_app/features/home/presentation/home_overview_providers.dart';
 import 'package:orbit_app/features/home/presentation/home_page.dart';
+import 'package:orbit_app/features/moments/domain/moment_models.dart';
+import 'package:orbit_app/features/moments/presentation/moment_providers.dart';
 import 'package:orbit_app/features/ping/data/ping_repository.dart';
 import 'package:orbit_app/features/ping/domain/ping_item.dart';
 import 'package:orbit_app/features/ping/presentation/ping_controller.dart';
@@ -23,6 +25,9 @@ void main() {
           const _FakeHomeOverviewRepository(),
         ),
         pingRepositoryProvider.overrideWithValue(const _FakePingRepository()),
+        recentMomentsProvider.overrideWith(
+          (ref) async => const <RecentMomentItem>[],
+        ),
       ],
       child: MaterialApp(
         theme: OrbitTheme.dark(),

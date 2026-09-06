@@ -12,6 +12,9 @@ import '../../auth/presentation/auth_view_state.dart';
 import '../../ping/domain/ping_item.dart';
 import '../../ping/presentation/ping_controller.dart';
 import '../../ping/presentation/widgets/ping_card.dart';
+import '../../moments/domain/moment_models.dart';
+import '../../moments/presentation/moment_providers.dart';
+import '../../moments/presentation/widgets/moment_summary_card.dart';
 import '../domain/home_overview.dart';
 import 'home_overview_providers.dart';
 import 'widgets/circle_summary_card.dart';
@@ -88,6 +91,7 @@ class _HomeDashboardContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final recentMoments = ref.watch(recentMomentsProvider);
     final activePings = pings.when(
       data: (value) => value.inbox,
       error: (_, _) => const <PingItem>[],
@@ -152,6 +156,8 @@ class _HomeDashboardContent extends ConsumerWidget {
                           'The full privacy-aware map experience is not enabled yet.',
                         ),
                       ),
+                      const SizedBox(height: OrbitSpacing.lg),
+                      _RecentMomentsSection(moments: recentMoments),
                       if (activePings.isNotEmpty) ...<Widget>[
                         const SizedBox(height: OrbitSpacing.lg),
                         OrbitSectionHeader(
@@ -207,6 +213,7 @@ class _HomeDashboardContent extends ConsumerWidget {
   Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(homeCirclesProvider);
     ref.invalidate(homeCirclePresenceProvider);
+    ref.invalidate(recentMomentsProvider);
     await ref.read(pingControllerProvider.notifier).refresh();
     await ref.read(homeCirclesProvider.future);
   }
@@ -215,6 +222,52 @@ class _HomeDashboardContent extends ConsumerWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _RecentMomentsSection extends StatelessWidget {
+  const _RecentMomentsSection({required this.moments});
+
+  final AsyncValue<List<RecentMomentItem>> moments;
+
+  @override
+  Widget build(BuildContext context) {
+    return moments.when(
+      loading: () => const SizedBox(
+        height: 210,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (items) {
+        if (items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const OrbitSectionHeader(title: 'Recent Moments'),
+            const SizedBox(height: OrbitSpacing.xs),
+            SizedBox(
+              height: 210,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: OrbitSpacing.sm),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return MomentSummaryCard(
+                    item: item,
+                    width: 190,
+                    onTap: () => context.push('/moments/${item.moment.id}'),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

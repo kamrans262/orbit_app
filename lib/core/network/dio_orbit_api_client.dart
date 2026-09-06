@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 import '../config/app_environment.dart';
 import '../logging/orbit_logger.dart';
 import '../security/session_store.dart';
 import 'orbit_api_client.dart';
+import 'orbit_binary_transfer_client.dart';
 import 'orbit_api_exception.dart';
 import 'session_refresh_coordinator.dart';
 
-class DioOrbitApiClient implements OrbitApiClient {
+class DioOrbitApiClient implements OrbitApiClient, OrbitBinaryTransferClient {
   DioOrbitApiClient({
     required AppEnvironment environment,
     required SessionStore sessionStore,
@@ -153,6 +156,63 @@ class DioOrbitApiClient implements OrbitApiClient {
   }
 
   @override
+  Future<void> putBytes(
+    String path,
+    List<int> bytes, {
+    Map<String, String>? headers,
+    bool allowAuthRetry = false,
+  }) async {
+    await _request(
+      method: 'PUT',
+      path: path,
+      authenticated: true,
+      data: bytes,
+      allowAuthRetry: allowAuthRetry,
+      extraHeaders: headers,
+      contentType: 'application/octet-stream',
+    );
+  }
+
+  @override
+  Future<void> downloadToFile(
+    String path,
+    String destinationPath, {
+    Map<String, Object?>? queryParameters,
+  }) async {
+    final response = await _request(
+      method: 'GET',
+      path: path,
+      authenticated: true,
+      queryParameters: queryParameters,
+      allowAuthRetry: true,
+      responseType: ResponseType.stream,
+    );
+    final body = response.data;
+    if (body is! ResponseBody) {
+      throw const OrbitApiException(
+        code: 'INVALID_RESPONSE',
+        message: 'Orbit returned an unexpected media response.',
+      );
+    }
+    final destination = File(destinationPath);
+    await destination.parent.create(recursive: true);
+    final sink = destination.openWrite();
+    var completed = false;
+    try {
+      await for (final chunk in body.stream) {
+        sink.add(chunk);
+      }
+      await sink.flush();
+      completed = true;
+    } finally {
+      await sink.close();
+      if (!completed && await destination.exists()) {
+        await destination.delete();
+      }
+    }
+  }
+
+  @override
   Future<bool> refreshIdentitySession() => _refreshCoordinator.refresh();
 
   Future<Response<dynamic>> _request({
@@ -163,6 +223,9 @@ class DioOrbitApiClient implements OrbitApiClient {
     Map<String, Object?>? queryParameters,
     String? bearerToken,
     required bool allowAuthRetry,
+    Map<String, String>? extraHeaders,
+    String? contentType,
+    ResponseType? responseType,
     bool retried = false,
   }) async {
     final effectiveBearer = await _resolveBearerToken(
@@ -177,9 +240,13 @@ class DioOrbitApiClient implements OrbitApiClient {
         queryParameters: queryParameters,
         options: Options(
           method: method,
-          headers: effectiveBearer == null
-              ? null
-              : <String, String>{'Authorization': 'Bearer $effectiveBearer'},
+          contentType: contentType,
+          responseType: responseType,
+          headers: <String, String>{
+            if (effectiveBearer != null)
+              'Authorization': 'Bearer $effectiveBearer',
+            ...?extraHeaders,
+          },
         ),
       );
 
@@ -222,6 +289,9 @@ class DioOrbitApiClient implements OrbitApiClient {
           queryParameters: queryParameters,
           bearerToken: bearerToken,
           allowAuthRetry: allowAuthRetry,
+          extraHeaders: extraHeaders,
+          contentType: contentType,
+          responseType: responseType,
           retried: true,
         );
       }
