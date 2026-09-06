@@ -63,21 +63,10 @@ class HomePage extends ConsumerWidget {
         Positioned(
           right: OrbitSpacing.md,
           bottom: OrbitSpacing.md,
-          child: SosFloatingAction(
-            onPressed: () => _showPlannedFeature(
-              context,
-              'SOS safety activation arrives in Flutter M8.',
-            ),
-          ),
+          child: SosFloatingAction(onPressed: () => context.push('/sos')),
         ),
       ],
     );
-  }
-
-  static void _showPlannedFeature(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -150,10 +139,7 @@ class _HomeDashboardContent extends ConsumerWidget {
                       const SizedBox(height: OrbitSpacing.lg),
                       QuickActions(
                         onPing: () => context.push('/pings'),
-                        onSos: () => _showPlannedFeature(
-                          context,
-                          'SOS safety flows arrive in Flutter M8.',
-                        ),
+                        onSos: () => context.push('/sos'),
                         onAddMember: () => context.go('/circles'),
                         onOpenMap: () => _showPlannedFeature(
                           context,

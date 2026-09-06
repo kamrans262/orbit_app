@@ -33,6 +33,8 @@ import '../../features/notifications/presentation/pages/notification_preferences
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../../features/sos/presentation/pages/sos_activation_page.dart';
+import '../../features/sos/presentation/pages/sos_incident_page.dart';
 import 'orbit_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -106,6 +108,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PresencePage(),
       ),
       GoRoute(path: '/pings', builder: (context, state) => const PingPage()),
+      GoRoute(
+        path: '/sos',
+        builder: (context, state) => const SosActivationPage(),
+        routes: <RouteBase>[
+          GoRoute(
+            path: ':sosId',
+            builder: (context, state) =>
+                SosIncidentPage(sosId: state.pathParameters['sosId']!),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsPage(),

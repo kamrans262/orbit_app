@@ -13,7 +13,7 @@ class SosFloatingAction extends StatelessWidget {
     return Semantics(
       button: true,
       label: 'Emergency SOS',
-      hint: 'SOS safety activation is not enabled in this milestone',
+      hint: 'Opens the emergency SOS activation screen',
       child: Material(
         color: Colors.transparent,
         child: InkWell(

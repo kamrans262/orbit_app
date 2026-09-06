@@ -26,6 +26,11 @@ class OrbitNotification {
   bool get isHighPriority => priority == 'high' || isHighestPriority;
 
   String? get internalRoute {
+    if (kind.startsWith('sos.')) {
+      final id = _nullableString(payload['sos_id']);
+      return id == null ? null : '/sos/${Uri.encodeComponent(id)}';
+    }
+
     switch (kind) {
       case 'ping.received':
         return '/pings';
