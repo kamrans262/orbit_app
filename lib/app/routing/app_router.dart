@@ -20,6 +20,8 @@ import '../../features/circles/presentation/pages/create_circle_invite_page.dart
 import '../../features/circles/presentation/pages/create_circle_page.dart';
 import '../../features/circles/presentation/pages/join_circle_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/messaging/presentation/pages/circle_messages_page.dart';
+import '../../features/messaging/presentation/pages/messaging_security_page.dart';
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -88,6 +90,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DeviceApprovalsPage(),
       ),
       GoRoute(
+        path: '/security/messaging',
+        builder: (context, state) => const MessagingSecurityPage(),
+      ),
+      GoRoute(
         path: '/presence',
         builder: (context, state) => const PresencePage(),
       ),
@@ -141,6 +147,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':circleId/invite',
                     builder: (context, state) => CreateCircleInvitePage(
+                      circleId: state.pathParameters['circleId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':circleId/messages',
+                    builder: (context, state) => CircleMessagesPage(
                       circleId: state.pathParameters['circleId']!,
                     ),
                   ),

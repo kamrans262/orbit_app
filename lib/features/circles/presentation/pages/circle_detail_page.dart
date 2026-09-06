@@ -155,6 +155,11 @@ class _ActionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = <_DetailAction>[
       _DetailAction(
+        icon: Icons.chat_bubble_outline_rounded,
+        label: 'Messages',
+        onTap: () => context.push('/circles/${circle.id}/messages'),
+      ),
+      _DetailAction(
         icon: Icons.people_outline_rounded,
         label: 'Members',
         onTap: () => context.push('/circles/${circle.id}/members'),

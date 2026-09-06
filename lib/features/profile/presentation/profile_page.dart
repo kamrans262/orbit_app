@@ -134,6 +134,21 @@ class ProfilePage extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right_rounded),
                 ),
               ),
+              const SizedBox(height: OrbitSpacing.sm),
+              OrbitGlassCard(
+                child: ListTile(
+                  onTap: () => context.push('/security/messaging'),
+                  leading: const Icon(
+                    Icons.lock_person_rounded,
+                    color: OrbitColors.success,
+                  ),
+                  title: const Text('Messaging security'),
+                  subtitle: const Text(
+                    'E2EE device identity, fingerprint and read receipts.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                ),
+              ),
               const SizedBox(height: OrbitSpacing.lg),
               Text(
                 'More profile, privacy, session, export, deletion, support and subscription controls arrive in their dedicated milestone.',
