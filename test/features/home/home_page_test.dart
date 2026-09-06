@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:orbit_app/core/design_system/orbit_theme.dart';
 import 'package:orbit_app/core/providers/core_providers.dart';
+import 'package:orbit_app/features/activity/domain/activity_item.dart';
+import 'package:orbit_app/features/activity/presentation/activity_providers.dart';
 import 'package:orbit_app/features/home/data/api_home_overview_repository.dart';
 import 'package:orbit_app/features/home/domain/home_overview.dart';
 import 'package:orbit_app/features/home/presentation/home_overview_providers.dart';
@@ -27,6 +29,9 @@ void main() {
         pingRepositoryProvider.overrideWithValue(const _FakePingRepository()),
         recentMomentsProvider.overrideWith(
           (ref) async => const <RecentMomentItem>[],
+        ),
+        activityPreviewProvider.overrideWith(
+          (ref) async => const <ActivityItem>[],
         ),
       ],
       child: MaterialApp(

@@ -9,6 +9,8 @@ import '../device/device_metadata_service.dart';
 import '../logging/orbit_logger.dart';
 import '../network/dio_orbit_api_client.dart';
 import '../network/orbit_api_client.dart';
+import '../network/orbit_api_command_client.dart';
+import '../network/orbit_api_envelope_client.dart';
 import '../network/orbit_binary_transfer_client.dart';
 import '../security/local_device_id_store.dart';
 import '../security/pending_bootstrap_store.dart';
@@ -53,6 +55,14 @@ final dioOrbitApiClientProvider = Provider<DioOrbitApiClient>((ref) {
 });
 
 final orbitApiClientProvider = Provider<OrbitApiClient>((ref) {
+  return ref.watch(dioOrbitApiClientProvider);
+});
+
+final orbitApiEnvelopeClientProvider = Provider<OrbitApiEnvelopeClient>((ref) {
+  return ref.watch(dioOrbitApiClientProvider);
+});
+
+final orbitApiCommandClientProvider = Provider<OrbitApiCommandClient>((ref) {
   return ref.watch(dioOrbitApiClientProvider);
 });
 

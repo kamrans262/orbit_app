@@ -6,11 +6,18 @@ import '../config/app_environment.dart';
 import '../logging/orbit_logger.dart';
 import '../security/session_store.dart';
 import 'orbit_api_client.dart';
+import 'orbit_api_command_client.dart';
+import 'orbit_api_envelope_client.dart';
 import 'orbit_binary_transfer_client.dart';
 import 'orbit_api_exception.dart';
 import 'session_refresh_coordinator.dart';
 
-class DioOrbitApiClient implements OrbitApiClient, OrbitBinaryTransferClient {
+class DioOrbitApiClient
+    implements
+        OrbitApiClient,
+        OrbitBinaryTransferClient,
+        OrbitApiEnvelopeClient,
+        OrbitApiCommandClient {
   DioOrbitApiClient({
     required AppEnvironment environment,
     required SessionStore sessionStore,
@@ -45,6 +52,31 @@ class DioOrbitApiClient implements OrbitApiClient, OrbitBinaryTransferClient {
     contentType: Headers.jsonContentType,
     responseType: ResponseType.json,
   );
+
+  @override
+  Future<Map<String, dynamic>> getEnvelope(
+    String path, {
+    bool authenticated = true,
+    Map<String, Object?>? queryParameters,
+    String? bearerToken,
+  }) async {
+    final response = await _request(
+      method: 'GET',
+      path: path,
+      authenticated: authenticated,
+      queryParameters: queryParameters,
+      bearerToken: bearerToken,
+      allowAuthRetry: true,
+    );
+    final payload = _stringMap(response.data);
+    if (payload == null) {
+      throw const OrbitApiException(
+        code: 'INVALID_RESPONSE',
+        message: 'Orbit returned an unexpected response.',
+      );
+    }
+    return Map<String, dynamic>.from(payload);
+  }
 
   @override
   Future<Map<String, dynamic>> getDataMap(
@@ -99,6 +131,24 @@ class DioOrbitApiClient implements OrbitApiClient, OrbitBinaryTransferClient {
       allowAuthRetry: allowAuthRetry,
     );
     return _extractDataMap(response);
+  }
+
+  @override
+  Future<void> postNoContent(
+    String path, {
+    bool authenticated = true,
+    Object? data,
+    bool allowAuthRetry = false,
+    String? bearerToken,
+  }) async {
+    await _request(
+      method: 'POST',
+      path: path,
+      authenticated: authenticated,
+      data: data,
+      bearerToken: bearerToken,
+      allowAuthRetry: allowAuthRetry,
+    );
   }
 
   @override

@@ -27,6 +27,9 @@ import '../../features/moments/domain/moment_models.dart';
 import '../../features/moments/presentation/pages/circle_moments_page.dart';
 import '../../features/moments/presentation/pages/moment_viewer_page.dart';
 import '../../features/moments/presentation/pages/moment_viewers_page.dart';
+import '../../features/notifications/presentation/notifications_page.dart';
+import '../../features/notifications/presentation/pages/announcement_detail_page.dart';
+import '../../features/notifications/presentation/pages/notification_preferences_page.dart';
 import '../../features/ping/presentation/ping_page.dart';
 import '../../features/presence/presentation/presence_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
@@ -103,6 +106,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PresencePage(),
       ),
       GoRoute(path: '/pings', builder: (context, state) => const PingPage()),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: '/notifications/preferences',
+        builder: (context, state) => const NotificationPreferencesPage(),
+      ),
+      GoRoute(
+        path: '/announcements/:announcementId',
+        builder: (context, state) => AnnouncementDetailPage(
+          announcementId: state.pathParameters['announcementId']!,
+        ),
+      ),
       GoRoute(
         path: '/moments/:momentId',
         builder: (context, state) =>

@@ -7,6 +7,9 @@ import '../../../core/design_system/orbit_spacing.dart';
 import '../../../core/widgets/orbit_atmosphere_background.dart';
 import '../../../core/widgets/orbit_feedback_state.dart';
 import '../../../core/widgets/orbit_section_header.dart';
+import '../../activity/domain/activity_item.dart';
+import '../../activity/presentation/activity_providers.dart';
+import '../../activity/presentation/widgets/activity_card.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/auth_view_state.dart';
 import '../../ping/domain/ping_item.dart';
@@ -92,6 +95,7 @@ class _HomeDashboardContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentMoments = ref.watch(recentMomentsProvider);
+    final smartActivity = ref.watch(activityPreviewProvider);
     final activePings = pings.when(
       data: (value) => value.inbox,
       error: (_, _) => const <PingItem>[],
@@ -158,6 +162,7 @@ class _HomeDashboardContent extends ConsumerWidget {
                       ),
                       const SizedBox(height: OrbitSpacing.lg),
                       _RecentMomentsSection(moments: recentMoments),
+                      _SmartActivitySection(activity: smartActivity),
                       if (activePings.isNotEmpty) ...<Widget>[
                         const SizedBox(height: OrbitSpacing.lg),
                         OrbitSectionHeader(
@@ -214,6 +219,7 @@ class _HomeDashboardContent extends ConsumerWidget {
     ref.invalidate(homeCirclesProvider);
     ref.invalidate(homeCirclePresenceProvider);
     ref.invalidate(recentMomentsProvider);
+    ref.invalidate(activityPreviewProvider);
     await ref.read(pingControllerProvider.notifier).refresh();
     await ref.read(homeCirclesProvider.future);
   }
@@ -303,6 +309,43 @@ class _CircleRail extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _SmartActivitySection extends StatelessWidget {
+  const _SmartActivitySection({required this.activity});
+
+  final AsyncValue<List<ActivityItem>> activity;
+
+  @override
+  Widget build(BuildContext context) {
+    return activity.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (items) {
+        if (items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: OrbitSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              OrbitSectionHeader(
+                title: 'Smart Activity',
+                actionLabel: 'See all',
+                onAction: () => context.go('/activity'),
+              ),
+              const SizedBox(height: OrbitSpacing.xs),
+              for (final item in items.take(3)) ...<Widget>[
+                ActivityCard(item: item, compact: true),
+                const SizedBox(height: OrbitSpacing.xs),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

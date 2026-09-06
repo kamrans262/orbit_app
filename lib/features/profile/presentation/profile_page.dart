@@ -118,6 +118,26 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: OrbitSpacing.lg),
+              Text(
+                'Notifications',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: OrbitSpacing.sm),
+              OrbitGlassCard(
+                child: ListTile(
+                  onTap: () => context.push('/notifications/preferences'),
+                  leading: const Icon(
+                    Icons.notifications_active_outlined,
+                    color: OrbitColors.warning,
+                  ),
+                  title: const Text('Notification preferences'),
+                  subtitle: const Text(
+                    'In-app, push, categories and quiet hours.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                ),
+              ),
+              const SizedBox(height: OrbitSpacing.lg),
               Text('Security', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: OrbitSpacing.sm),
               OrbitGlassCard(
