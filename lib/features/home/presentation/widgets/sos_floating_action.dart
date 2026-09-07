@@ -42,7 +42,12 @@ class SosFloatingAction extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                const Icon(Icons.sos_rounded, color: Colors.white, size: 29),
+                const Icon(
+                  Icons.emergency_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                const SizedBox(height: 2),
                 Text(
                   'SOS',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(

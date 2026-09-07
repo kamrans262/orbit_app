@@ -158,13 +158,14 @@ class _CameraPageState extends ConsumerState<CameraPage>
       _showMessage('Choose an active Circle before capturing a Moment.');
       return;
     }
-    final selectedCircle = circle;
+
+    final OrbitCircle activeCircle = circle;
 
     setState(() => _captureBusy = true);
     try {
       if (_videoMode) {
         if (controller.value.isRecordingVideo) {
-          await _finishVideo(selectedCircle);
+          await _finishVideo(activeCircle);
         } else {
           await controller.startVideoRecording();
           _videoSeconds = 0;
@@ -178,7 +179,7 @@ class _CameraPageState extends ConsumerState<CameraPage>
             if (_videoSeconds >= 30 &&
                 _controller?.value.isRecordingVideo == true &&
                 !_videoStopInProgress) {
-              await _finishVideo(selectedCircle);
+              await _finishVideo(activeCircle);
             }
           });
           if (mounted) {
@@ -194,8 +195,8 @@ class _CameraPageState extends ConsumerState<CameraPage>
         await context.push(
           '/camera/review',
           extra: MomentCaptureDraft(
-            circleId: selectedCircle.id,
-            circleName: selectedCircle.name,
+            circleId: activeCircle.id,
+            circleName: activeCircle.name,
             sourcePath: capture.path,
             kind: OrbitMediaKind.image,
             contentTypeHint: 'image/jpeg',
@@ -326,12 +327,7 @@ class _CameraPageState extends ConsumerState<CameraPage>
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio,
-                child: CameraPreview(controller),
-              ),
-            ),
+            _CameraPreviewSurface(controller: controller),
             const _CameraShade(),
             Positioned(
               left: OrbitSpacing.md,
@@ -447,6 +443,40 @@ class _CameraPageState extends ConsumerState<CameraPage>
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CameraPreviewSurface extends StatelessWidget {
+  const _CameraPreviewSurface({required this.controller});
+
+  final CameraController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final previewSize = controller.value.previewSize;
+    if (previewSize == null) {
+      return Center(child: CameraPreview(controller));
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final portrait = constraints.maxHeight >= constraints.maxWidth;
+        final previewWidth = portrait ? previewSize.height : previewSize.width;
+        final previewHeight = portrait ? previewSize.width : previewSize.height;
+
+        return ClipRect(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: previewWidth,
+              height: previewHeight,
+              child: controller.buildPreview(),
+            ),
+          ),
+        );
+      },
     );
   }
 }

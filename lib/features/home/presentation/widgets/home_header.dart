@@ -34,49 +34,36 @@ class HomeHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: OrbitSpacing.lg),
+        Text(
+          'Good evening, $displayName',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.headlineLarge,
+        ),
+        const SizedBox(height: OrbitSpacing.xs),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Good evening, $displayName',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineLarge,
-                  ),
-                  const SizedBox(height: OrbitSpacing.xs),
-                  Row(
-                    children: <Widget>[
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: activePingCount > 0
-                              ? OrbitColors.warning
-                              : OrbitColors.success,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: OrbitSpacing.xs),
-                      Flexible(
-                        child: Text(
-                          _statusLabel(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(color: OrbitColors.textSecondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: activePingCount > 0
+                    ? OrbitColors.warning
+                    : OrbitColors.success,
+                shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: OrbitSpacing.md),
-            const _MissionLine(),
+            const SizedBox(width: OrbitSpacing.xs),
+            Expanded(
+              child: Text(
+                _statusLabel(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: OrbitColors.textSecondary,
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -155,38 +142,6 @@ class _OrbitWordmark extends StatelessWidget {
           ).textTheme.headlineSmall?.copyWith(fontSize: 24),
         ),
       ],
-    );
-  }
-}
-
-class _MissionLine extends StatelessWidget {
-  const _MissionLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 112),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              'Safer people\nbrighter tomorrows',
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: OrbitColors.textMuted,
-                height: 1.25,
-              ),
-            ),
-          ),
-          const SizedBox(width: OrbitSpacing.xs),
-          const Icon(
-            Icons.favorite_border_rounded,
-            color: OrbitColors.danger,
-            size: 18,
-          ),
-        ],
-      ),
     );
   }
 }

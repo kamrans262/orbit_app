@@ -31,22 +31,22 @@ class QuickActions extends StatelessWidget {
       _QuickActionData(
         title: 'SOS',
         subtitle: 'Get help now',
-        icon: Icons.sos_rounded,
+        icon: Icons.emergency_rounded,
         accent: OrbitColors.danger,
         isDanger: true,
         onTap: onSos,
       ),
       _QuickActionData(
-        title: 'Add Member',
-        subtitle: 'Grow your circle',
-        icon: Icons.person_add_alt_1_rounded,
+        title: 'Circle',
+        subtitle: 'People & sharing',
+        icon: Icons.groups_2_rounded,
         accent: OrbitColors.primary,
         onTap: onAddMember,
       ),
       _QuickActionData(
-        title: 'Open Map',
-        subtitle: 'See everyone nearby',
-        icon: Icons.map_outlined,
+        title: 'Location',
+        subtitle: 'Privacy-aware map',
+        icon: Icons.location_on_outlined,
         accent: OrbitColors.teal,
         onTap: onOpenMap,
       ),
@@ -54,22 +54,25 @@ class QuickActions extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columnCount = constraints.maxWidth < 340 ? 2 : 4;
+        const visibleCardCount = 3;
         final spacing = OrbitSpacing.sm;
-        final itemWidth =
-            (constraints.maxWidth - spacing * (columnCount - 1)) / columnCount;
+        final visibleWidth = constraints.maxWidth;
+        final cardWidth =
+            (visibleWidth - (spacing * (visibleCardCount - 1))) /
+            visibleCardCount;
 
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: actions
-              .map(
-                (action) => SizedBox(
-                  width: itemWidth,
-                  child: _QuickActionCard(data: action),
-                ),
-              )
-              .toList(growable: false),
+        return SizedBox(
+          height: 156,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: actions.length,
+            separatorBuilder: (_, _) => SizedBox(width: spacing),
+            itemBuilder: (context, index) => SizedBox(
+              width: cardWidth,
+              child: _QuickActionCard(data: actions[index]),
+            ),
+          ),
         );
       },
     );
@@ -83,18 +86,20 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 156,
+    return SizedBox.expand(
       child: OrbitGlassCard(
         onTap: data.onTap,
         tint: data.isDanger
             ? OrbitColors.danger.withValues(alpha: 0.22)
             : data.accent.withValues(alpha: 0.08),
-        padding: const EdgeInsets.all(OrbitSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OrbitSpacing.xs,
+          vertical: OrbitSpacing.sm,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(data.icon, color: data.accent, size: 34),
+            Icon(data.icon, color: data.accent, size: 32),
             const SizedBox(height: OrbitSpacing.sm),
             Text(
               data.title,

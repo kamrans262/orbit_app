@@ -41,6 +41,7 @@ class _OrbitRealtimeBridgeState extends ConsumerState<OrbitRealtimeBridge>
   StreamSubscription<OrbitRealtimeEvent>? _eventSubscription;
   StreamSubscription<Uri>? _deepLinkSubscription;
   StreamSubscription<OrbitPushToken?>? _pushTokenSubscription;
+  StreamSubscription<OrbitPushWakeup>? _pushWakeupSubscription;
 
   late final ReverbRealtimeClient _realtime;
   late final DeepLinkIngress _deepLinkIngress;
@@ -83,6 +84,7 @@ class _OrbitRealtimeBridgeState extends ConsumerState<OrbitRealtimeBridge>
     unawaited(_eventSubscription?.cancel());
     unawaited(_deepLinkSubscription?.cancel());
     unawaited(_pushTokenSubscription?.cancel());
+    unawaited(_pushWakeupSubscription?.cancel());
     unawaited(_realtime.stop());
     super.dispose();
   }
@@ -138,6 +140,12 @@ class _OrbitRealtimeBridgeState extends ConsumerState<OrbitRealtimeBridge>
     }
 
     if (_pushSource.isAvailable) {
+      _pushWakeupSubscription = _pushSource.wakeups.listen(
+        _handlePushWakeup,
+        onError: (Object error, StackTrace stackTrace) {
+          _logger.debug('Foreground push wake-up stream failed');
+        },
+      );
       _pushTokenSubscription = _pushSource.tokenChanges.listen(
         (token) => unawaited(_synchronizePushToken(token)),
         onError: (Object error, StackTrace stackTrace) {
@@ -177,11 +185,13 @@ class _OrbitRealtimeBridgeState extends ConsumerState<OrbitRealtimeBridge>
       await _realtime.setPersistentChannels(channels);
 
       if (_pushSource.isAvailable && _pushSessionId != session.sessionId) {
-        final synchronized = await _synchronizePushToken(
-          await _pushSource.currentToken(),
-        );
-        if (synchronized) {
-          _pushSessionId = session.sessionId;
+        final authorized = await _pushSource.prepare();
+        final token = authorized ? await _pushSource.currentToken() : null;
+        if (!authorized || token != null) {
+          final synchronized = await _synchronizePushToken(token);
+          if (synchronized) {
+            _pushSessionId = session.sessionId;
+          }
         }
       }
 
@@ -266,6 +276,56 @@ class _OrbitRealtimeBridgeState extends ConsumerState<OrbitRealtimeBridge>
     // Destination pages still load through the authenticated Laravel API, so
     // Circle/SOS authorization remains server-authoritative after allowlisting.
     ref.read(appRouterProvider).go(route);
+  }
+
+  void _handlePushWakeup(OrbitPushWakeup wakeup) {
+    final auth = ref.read(authControllerProvider).asData?.value;
+    if (auth?.stage != AuthStage.authenticated) {
+      return;
+    }
+
+    // Remote push never carries authoritative feature state. It only wakes the
+    // same durable REST-backed providers used by Reverb and normal navigation.
+    unawaited(
+      _runRealtimeTask(
+        'Foreground push notification refresh failed',
+        () => ref.read(notificationsControllerProvider.notifier).refresh(),
+      ),
+    );
+
+    final kind = wakeup.kind ?? '';
+    final route = wakeup.deepLink == null
+        ? null
+        : ref.read(orbitDeepLinkResolverProvider).resolve(wakeup.deepLink!);
+    if (kind.startsWith('message.') && route != null) {
+      final match = RegExp(r'^/circles/([^/]+)/messages$').firstMatch(route);
+      final circleId = match?.group(1);
+      if (circleId != null) {
+        ref.invalidate(circleConversationProvider(circleId));
+      }
+    } else if (kind.startsWith('ping.')) {
+      unawaited(
+        _runRealtimeTask(
+          'Foreground push Ping refresh failed',
+          () => ref.read(pingControllerProvider.notifier).refresh(),
+        ),
+      );
+    } else if (kind.startsWith('moment.')) {
+      ref.invalidate(recentMomentsProvider);
+    } else if (kind.startsWith('activity.')) {
+      unawaited(
+        _runRealtimeTask(
+          'Foreground push activity refresh failed',
+          () => ref.read(activityControllerProvider.notifier).refresh(),
+        ),
+      );
+    } else if (kind.startsWith('sos.') && route != null) {
+      final match = RegExp(r'^/sos/([^/]+)$').firstMatch(route);
+      final sosId = match?.group(1);
+      if (sosId != null) {
+        ref.invalidate(sosIncidentProvider(sosId));
+      }
+    }
   }
 
   void _handleRealtimeEvent(OrbitRealtimeEvent event) {

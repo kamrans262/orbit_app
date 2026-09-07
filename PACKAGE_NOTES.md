@@ -1,30 +1,27 @@
-# Package notes
+Orbit Flutter UI Runtime Polish v3
 
-- Milestone: Orbit Flutter M10 — Realtime + Push + Deep Links
-- Baseline: final green M9 only
-- Backend changes: none; Laravel contracts are validated read-only
-- New runtime dependencies: `app_links:^7.2.1`, `web_socket_channel:^3.0.3`
-- New route-level screens: none
-- Existing screens enhanced: Circle Messages, SOS Incident
-- E2EE: preserved; message realtime remains encrypted-envelope wake-up only
-- Presence: server-authoritative; realtime only invalidates/refetches server privacy-filtered data
-- SOS: protected incident channel plus retained 15-second polling fallback
-- Deep links: centralized strict allowlist; arbitrary URLs are rejected
-- Push: provider-neutral token lifecycle and open-routing seam; no fake APNS/FCM sender
-- Rollback: latest `.orbit-backups\ui-m10-*` checkpoint
+Scope: UI/runtime corrections only. No Laravel overlay.
 
+v3 repair:
+- keeps the v1 null-safety fix by pinning the validated Circle to `activeCircle` inside `_capture`.
+- fixes the v2 regression where `_finishVideo(OrbitCircle circle)` incorrectly referenced `activeCircle` outside its scope; video review now uses the method's `circle` parameter.
+- reuses the earliest UI-polish rollback checkpoint instead of backing up partial v1/v2 states.
 
-## FINAL v3 installer repair
+Modified runtime files:
+- lib/features/profile/presentation/pages/edit_profile_page.dart
+- lib/features/notifications/presentation/pages/notification_preferences_page.dart
+- lib/features/home/presentation/widgets/home_header.dart
+- lib/features/home/presentation/widgets/quick_actions.dart
+- lib/features/home/presentation/widgets/sos_floating_action.dart
+- lib/features/camera/presentation/camera_page.dart
 
-- Removes an in-project `overlay/` staging directory after the overlay is merged, before `flutter analyze`.
-- Reuses the original M10/M9 regression checkpoint on retries instead of backing up a partially installed M10 state.
-- Preserves the public named dependency-injection constructors while explicitly suppressing `prefer_initializing_formals` where that lint would require private named parameters.
-- Verifier now fails clearly if an installer staging overlay ever leaks into the project.
+Added regression contract:
+- test/features/ui_polish/ui_polish_source_contract_test.dart
 
-## FINAL v4 deep-link contract correction
-
-- Fixes the final M10 verifier failure where `orbit://sos/../secret` normalizes to `/secret` before the resolver sees it.
-- Enforces UUID-shaped identifiers for Circle, Moment, Ping, and SOS deep links, matching the authoritative Laravel `uuid`/`foreignUuid` schema.
-- Rejects arbitrary slugs, traversal-normalized remnants, extra path segments, query strings, and fragments.
-- Strengthens the verifier to assert the backend UUID schema and the UUID-only client resolver contract.
-- Reuses the existing pre-M10 M9 rollback checkpoint when rerun over the current installed M10 state.
+No changes to:
+- backend APIs or migrations
+- authentication/device trust policy
+- E2EE
+- Firebase provider credentials
+- Reverb contracts
+- SOS server authority/fallback behavior

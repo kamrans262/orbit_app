@@ -16,49 +16,52 @@ class NotificationPreferencesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(notificationPreferencesControllerProvider);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const OrbitAtmosphereBackground(),
-        SafeArea(
-          child: Column(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  OrbitSpacing.xs,
-                  OrbitSpacing.xs,
-                  OrbitSpacing.lg,
-                  0,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          const OrbitAtmosphereBackground(),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    OrbitSpacing.xs,
+                    OrbitSpacing.xs,
+                    OrbitSpacing.lg,
+                    0,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      const BackButton(),
+                      Expanded(
+                        child: Text(
+                          'Notification preferences',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  children: <Widget>[
-                    const BackButton(),
-                    Expanded(
-                      child: Text(
-                        'Notification preferences',
-                        style: Theme.of(context).textTheme.headlineSmall,
+                Expanded(
+                  child: state.when(
+                    loading: () => const OrbitLoadingState(),
+                    error: (_, _) => OrbitErrorState(
+                      title: 'Preferences could not be loaded',
+                      message: 'Check your connection and try again.',
+                      onRetry: () => ref.invalidate(
+                        notificationPreferencesControllerProvider,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: state.when(
-                  loading: () => const OrbitLoadingState(),
-                  error: (_, _) => OrbitErrorState(
-                    title: 'Preferences could not be loaded',
-                    message: 'Check your connection and try again.',
-                    onRetry: () => ref.invalidate(
-                      notificationPreferencesControllerProvider,
-                    ),
+                    data: (value) => _PreferencesContent(state: value),
                   ),
-                  data: (value) => _PreferencesContent(state: value),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

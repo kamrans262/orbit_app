@@ -16,54 +16,57 @@ class EditProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(profileControllerProvider);
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const OrbitAtmosphereBackground(),
-        SafeArea(
-          child: Column(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  OrbitSpacing.xs,
-                  OrbitSpacing.xs,
-                  OrbitSpacing.lg,
-                  0,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    const BackButton(),
-                    Expanded(
-                      child: Text(
-                        'Profile details',
-                        style: Theme.of(context).textTheme.headlineSmall,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          const OrbitAtmosphereBackground(),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    OrbitSpacing.xs,
+                    OrbitSpacing.xs,
+                    OrbitSpacing.lg,
+                    0,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      const BackButton(),
+                      Expanded(
+                        child: Text(
+                          'Profile details',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: state.when(
-                  loading: () => const OrbitLoadingState(),
-                  error: (_, _) => OrbitErrorState(
-                    title: 'Profile could not be loaded',
-                    message: 'Check your connection and try again.',
-                    onRetry: () => ref.invalidate(profileControllerProvider),
-                  ),
-                  data: (value) => _EditProfileForm(
-                    key: ValueKey<String>(
-                      '${value.profile.id}:${value.profile.updatedAt?.microsecondsSinceEpoch ?? 0}',
-                    ),
-                    profile: value.profile,
-                    isSaving: value.isSaving,
-                    errorMessage: value.errorMessage,
+                    ],
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: state.when(
+                    loading: () => const OrbitLoadingState(),
+                    error: (_, _) => OrbitErrorState(
+                      title: 'Profile could not be loaded',
+                      message: 'Check your connection and try again.',
+                      onRetry: () => ref.invalidate(profileControllerProvider),
+                    ),
+                    data: (value) => _EditProfileForm(
+                      key: ValueKey<String>(
+                        '${value.profile.id}:${value.profile.updatedAt?.microsecondsSinceEpoch ?? 0}',
+                      ),
+                      profile: value.profile,
+                      isSaving: value.isSaving,
+                      errorMessage: value.errorMessage,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
